@@ -51,6 +51,105 @@ mvn spring-boot:run
 
 The application will start on `http://localhost:8080`
 
+## CI/CD with Docker and Kubernetes (Step by Step)
+
+This project now includes:
+- Docker image build for `kuba-be`
+- Kubernetes manifests for deployment
+- GitHub Actions pipeline for build, push, and deploy
+
+### 1. Understand the delivery flow
+
+1. Push code to `main`
+2. GitHub Actions runs Maven tests/build
+3. Docker image is built and pushed to GHCR
+4. Workflow deploys the new image to your Kubernetes cluster
+
+### 2. Files added for the pipeline
+
+- `.github/workflows/kuba-be-cicd.yml`
+- `Dockerfile`
+- `.dockerignore`
+- `k8s/namespace.yaml`
+- `k8s/configmap.yaml`
+- `k8s/deployment.yaml`
+- `k8s/service.yaml`
+- `k8s/secret.example.yaml`
+
+### 3. Configure GitHub repository secrets
+
+In your GitHub repository, open **Settings > Secrets and variables > Actions** and add:
+
+- `KUBE_CONFIG_DATA`: base64-encoded kubeconfig content
+- `DB_USERNAME`: database username for production cluster
+- `DB_PASSWORD`: database password for production cluster
+- `JWT_SECRET`: secure JWT secret for production
+
+Optional variable:
+- `K8S_NAMESPACE`: namespace name (default is `kuba`)
+
+How to get `KUBE_CONFIG_DATA`:
+
+```bash
+cat ~/.kube/config | base64
+```
+
+### 4. Prepare Kubernetes dependencies
+
+The backend deployment expects PostgreSQL reachable at:
+
+`jdbc:postgresql://postgres:5432/kuba_db`
+
+If your DB host is different, change `DB_URL` in `k8s/configmap.yaml`.
+
+### 5. First deployment (manual bootstrap)
+
+Before first CI run, apply base manifests once:
+
+```bash
+kubectl apply -f kuba-be/k8s/namespace.yaml
+kubectl apply -f kuba-be/k8s/configmap.yaml
+kubectl apply -f kuba-be/k8s/service.yaml
+kubectl apply -f kuba-be/k8s/deployment.yaml
+```
+
+You can also create secret manually for local cluster checks:
+
+```bash
+kubectl -n kuba create secret generic kuba-be-secret \
+  --from-literal=DB_USERNAME=postgres \
+  --from-literal=DB_PASSWORD=postgres \
+  --from-literal=JWT_SECRET=change-me
+```
+
+The CI workflow will upsert this secret on each deployment using GitHub secrets.
+
+### 6. Trigger CI/CD
+
+1. Commit and push to `main`
+2. Open **Actions** tab in GitHub
+3. Watch workflow `Kuba BE CI/CD`
+4. Validate rollout:
+
+```bash
+kubectl -n kuba get pods
+kubectl -n kuba rollout status deployment/kuba-be
+```
+
+### 7. Local Docker test (recommended)
+
+From `kuba-be` folder:
+
+```bash
+docker build -t kuba-be:local .
+docker run --rm -p 8080:8080 \
+  -e DB_URL=jdbc:postgresql://host.docker.internal:5432/kuba_db \
+  -e DB_USERNAME=postgres \
+  -e DB_PASSWORD=postgres \
+  -e JWT_SECRET=local-dev-secret \
+  kuba-be:local
+```
+
 ## API Endpoints
 
 ### Authentication
@@ -139,20 +238,29 @@ kuba-be/
 
 ## Configuration
 
-Edit `src/main/resources/application.yml` to customize:
+The app now supports environment variables (with local defaults) in `src/main/resources/application.yml`:
 - Database connection
 - JWT secret (change for production!)
 - JWT expiration time
 - Server port
 - CORS origins
 
+Environment variables used by deployment:
+
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRATION`
+- `SERVER_PORT`
+- `SERVER_CONTEXT_PATH`
+
 ## Production Notes
 
-⚠️ **Security**: Change the JWT secret in `application.yml` before deploying to production:
-```yaml
-jwt:
-  secret: your-secure-secret-key-here
-```
+⚠️ **Security**:
+- Never commit real secrets to git.
+- Set a strong `JWT_SECRET` in GitHub Secrets.
+- Use a managed PostgreSQL instance or a secured DB deployment.
 
 ## License
 

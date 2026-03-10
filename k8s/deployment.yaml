@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuba-be
+  namespace: kuba
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kuba-be
+  template:
+    metadata:
+      labels:
+        app: kuba-be
+    spec:
+      containers:
+        - name: kuba-be
+          image: ghcr.io/your-org/kuba-be:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: kuba-be-config
+            - secretRef:
+                name: kuba-be-secret
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

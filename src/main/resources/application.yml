@@ -3,9 +3,9 @@ spring:
     name: kuba-api
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/kuba_db
-    username: postgres
-    password: postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kuba_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,9 +25,9 @@ spring:
       write-dates-as-timestamps: false
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
-    context-path: /api
+    context-path: ${SERVER_CONTEXT_PATH:/api}
 
 springdoc:
   api-docs:
@@ -39,5 +39,5 @@ springdoc:
     tags-sorter: alpha
 
 jwt:
-  secret: kuba_secret_key_2026_super_secure_key_change_in_production
-  expiration: 86400000
+  secret: ${JWT_SECRET:kuba_secret_key_2026_super_secure_key_change_in_production}
+  expiration: ${JWT_EXPIRATION:86400000}

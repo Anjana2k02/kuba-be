@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kuba-be-config
+  namespace: kuba
+data:
+  SERVER_PORT: "8080"
+  SERVER_CONTEXT_PATH: "/api"
+  JWT_EXPIRATION: "86400000"
+  DB_URL: "jdbc:postgresql://postgres:5432/kuba_db"
