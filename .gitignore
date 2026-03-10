@@ -1,0 +1,32 @@
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# Build
+target/
+build/
+
+# Maven
+*.jar
+*.war
+*.ear
+pom.xml.tag
+pom.xml.releaseBackup
+
+# Gradle
+.gradle/
+
+# Database
+*.db
+
+# Logs
+log*
+logs/
+
+# Environment
+.env
+.env.local
