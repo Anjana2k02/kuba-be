@@ -2,10 +2,12 @@ name: Kuba BE CI/CD
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "master"]
     paths:
       - "**"
       - ".github/workflows/kuba-be-cicd.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
